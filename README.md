@@ -151,25 +151,6 @@ data/bottle/                  dataset (see below)
 
 ---
 
-## 💾 Data
-
-Evaluated on the **`bottle`** category of the public
-**[MVTec Anomaly Detection dataset](https://www.mvtec.com/company/research/datasets/mvtec-ad)**
-(Bergmann et al., CVPR 2019 · licensed CC BY-NC-SA 4.0). A small sample ships with the repo;
-download the full set and arrange it as:
-
-```
-data/bottle/
-├─ train/good/                                         reference-building images
-├─ test/{good,broken_large,broken_small,contamination}/
-└─ ground_truth/                                       masks (auxiliary pixel metric only)
-```
-
-The pipeline is **dataset-agnostic** — point `--data` at any folder with this structure
-(e.g. self-captured photos) to run on your own images.
-
----
-
 <div align="center">
 <sub>All processing at 512×512 · parameters frozen in <code>src/config.py</code> · classical methods only.<br>
 The course brief encourages original images; the public MVTec set was used for reproducibility and
