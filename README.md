@@ -1,114 +1,177 @@
-# Classical Bottle Defect Inspection (DIP 2026)
+<div align="center">
 
-A classical computer-vision pipeline that inspects the mouth of glass bottles and decides
-whether each bottle is **good** or **defective**, and, when defective, classifies the defect as
-**broken_large**, **broken_small**, or **contamination**. The system uses only classical
-image-processing techniques — geometric registration, reference differencing, colour distance,
-morphology, connected-component analysis and rule-based decisions. **No machine-learning
-classifier and no synthetic data are used.**
+<h1>🍾 Classical Bottle Defect Inspection</h1>
 
-The full method and results are written up in the report:
-**`report/Bottle_Inspection_Report_DIP2026_Lior.pdf`**.
+<p><b>A reference-based computer-vision pipeline that detects and classifies defects on the mouth of glass bottles — using only classical image processing, no machine learning.</b></p>
 
-## Headline results (MVTec *bottle*, 83 test images)
+<p>
+<img src="https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white" alt="Python">
+<img src="https://img.shields.io/badge/OpenCV-4.x-5C3EE8?logo=opencv&logoColor=white" alt="OpenCV">
+<img src="https://img.shields.io/badge/scikit--image-0.26-FF7F0E" alt="scikit-image">
+<img src="https://img.shields.io/badge/approach-classical%20CV%20%C2%B7%20no%20ML-2EA043" alt="Classical CV, no ML">
+<img src="https://img.shields.io/badge/DIP-2026%20course%20project-555" alt="DIP 2026">
+</p>
 
-| Metric | Value |
-|---|---|
-| Precision | **1.00** |
-| Recall | **0.75** |
-| Specificity | **1.00** (0 false positives on 20 good images) |
-| F1 | **0.85** |
-| Accuracy | **0.81** |
-| Per-type recall | broken_large 1.00 · broken_small 0.86 · contamination 0.38 |
+<img src="article_assets/pipeline_diagram.png" width="92%" alt="Pipeline overview"/>
 
-Detection is strong and raises no false alarms; the main limitation is subtle low-contrast
-**contamination**, about half of which is near-invisible to colour differencing (an honest
-negative result, discussed in the report).
+</div>
 
-## How it works
+---
+
+## ✨ Overview
+
+Each bottle is photographed top-down and compared against a **defect-free reference** to decide
+whether it is **good** or **defective** — and, if defective, to classify the defect as
+**`broken_large`**, **`broken_small`**, or **`contamination`**.
+
+Every stage is classical and interpretable: geometric **registration**, **reference differencing**
+in physical colour units, **morphology**, **connected-component** analysis, and an explicit
+**rule-based** decision. There is **no learned model and no synthetic data** anywhere in the system.
+
+> 📄 **Full write-up (IMRaD report):** [`report/Bottle_Inspection_Report_DIP2026_Lior.pdf`](report/Bottle_Inspection_Report_DIP2026_Lior.pdf)
+
+---
+
+## 📊 Results at a glance
+
+<p align="center"><i>Evaluated on the public <b>MVTec AD — bottle</b> set (83 test images).</i></p>
+
+| Metric | Score | Note |
+|:--|:--:|:--|
+| **Precision** | `1.00` | no false alarms |
+| **Recall** | `0.75` | every breakage caught |
+| **Specificity** | `1.00` | 0 / 20 good images flagged |
+| **F1** | `0.85` | |
+| **Accuracy** | `0.81` | |
+
+<p align="center">
+<b>Per-type recall</b> &nbsp;·&nbsp; <code>broken_large</code> <b>1.00</b> &nbsp;·&nbsp; <code>broken_small</code> <b>0.86</b> &nbsp;·&nbsp; <code>contamination</code> <b>0.38</b>
+</p>
+
+Detection is strong and **raises no false alarms**. The honest limitation is subtle, low-contrast
+**contamination** — roughly half of these defects are near-invisible to colour differencing and are
+reported transparently as a negative result in the report.
+
+<div align="center">
+<img src="article_assets/score_distribution.png" width="49%" alt="Score distribution"/>
+<img src="article_assets/confusion_matrix.png" width="38%" alt="Confusion matrix"/>
+</div>
+
+---
+
+## 🔬 How it works
 
 ```
-Offline (once):  good images ──ECC align──▶ pixel median ──▶ reference
-                 reference ──Otsu + erode──▶ inner ROI
+Offline (built once)
+    good images ──ECC align──▶ pixel median ──▶ reference image
+    reference   ──Otsu + erode──────────────▶ inner ROI
 
-Online (per image):
-  inspection ─▶ preprocess (CLAHE + blur) ─▶ register to reference (ECC, Euclidean)
-            ─▶ photometric match (gain/bias) ─▶ CIELAB ΔE difference
-            ─▶ threshold + morphology ─▶ connected components + features
-            ─▶ detect (area % of ROI) ─▶ classify type ─▶ evaluate
+Online (per inspection image)
+    inspection ─▶ preprocess (CLAHE + blur)
+               ─▶ register to reference (ECC, Euclidean)
+               ─▶ photometric match (gain / bias)
+               ─▶ CIELAB ΔE difference
+               ─▶ threshold + morphology
+               ─▶ connected components + features
+               ─▶ detect (area % of ROI) ─▶ classify type ─▶ evaluate
 ```
 
-Key design choices: a **registered-median reference** (sharp ring, no smear); **photometric
-gain/bias matching** to remove global illumination (the main false-positive reducer); a
-**CIELAB difference kept in physical units** so one fixed threshold is comparable across images;
-and a decision threshold **calibrated by balanced accuracy** to respect class imbalance.
+**Design choices that matter**
 
-## Repository layout
+| Choice | Why |
+|:--|:--|
+| **Registered-median reference** | aligning good samples before the median keeps the amber ring sharp instead of smeared |
+| **Photometric gain/bias match** | removes global illumination differences — the single biggest false-positive reducer |
+| **CIELAB ΔE in _physical_ units** | the difference map is **not** per-image normalised, so one fixed threshold is comparable everywhere |
+| **Balanced-accuracy calibration** | the decision threshold respects the class imbalance instead of over-favouring recall (as F1 would) |
 
-```
-src/                 pipeline source (well commented)
-  config.py            frozen parameters
-  io_utils.py          image loading / listing
-  preprocessing.py     CLAHE, reference build, bottle mask + ROI, photometric match
-  registration.py      ECC (Euclidean) alignment to the reference
-  differencing.py      CIELAB ΔE difference map
-  segmentation.py      thresholding + morphology + connected components
-  features.py          per-component shape / brightness descriptors
-  classification.py    detect + rule-based defect typing
-  pipeline.py          per-image orchestration
-  evaluate.py          metrics, confusion matrices, threshold calibration, pixel IoU
-  visualization.py     all report figures
-  run_all.py           end-to-end entry point
-tools/
-  make_block_diagram.py  pipeline block diagram for the report
-report/
-  build_report.py        builds the PDF from the result artifacts
-  Bottle_Inspection_Report_DIP2026_Lior.pdf
-article_assets/        publication-quality figures used in the report
-results/               predictions.csv, metrics.json, confusion matrices, per_image/ outputs
-data/bottle/           dataset (see "Data" below)
-requirements.txt
-```
+A full processing chain on a real defect:
 
-## Run
+<div align="center">
+<img src="article_assets/panel_broken_large.png" width="88%" alt="Stage-by-stage example"/>
+</div>
+
+---
+
+## 🚀 Quick start
 
 ```bash
 pip install -r requirements.txt
 
-# full pipeline: builds reference, runs all test images, calibrates,
-# writes results/ and regenerates all figures in article_assets/
+# full pipeline: build reference → run all test images → calibrate →
+# write results/ and regenerate every figure in article_assets/
 python -m src.run_all --data data/bottle --out results --assets article_assets
 
 # (optional) rebuild the PDF report from the latest results
 python report/build_report.py
 ```
 
-Outputs:
-- `results/predictions.csv` — per-image prediction, scores, registration diagnostics
-- `results/metrics.json`, `results/summary_metrics.csv` — image-level metrics
-- `results/confusion_matrix.csv`, `results/confusion_multiclass.csv`
-- `results/pixel_iou.csv` — auxiliary pixel-level localisation vs ground truth
-- `results/per_image/<class>_<id>/` — diff, mask, roi, registered, overlay PNGs
-- `article_assets/*.png` — all report figures
-- `report/Bottle_Inspection_Report_DIP2026_Lior.pdf` — the report
+<details>
+<summary><b>📦 What gets produced</b></summary>
 
-## Data
+<br>
 
-The pipeline is evaluated on the **bottle** category of the public
-[MVTec Anomaly Detection dataset](https://www.mvtec.com/company/research/datasets/mvtec-ad)
-(Bergmann et al., CVPR 2019; licensed CC BY-NC-SA 4.0). Expected structure:
+| Output | Contents |
+|:--|:--|
+| `results/predictions.csv` | per-image prediction, scores, registration diagnostics |
+| `results/metrics.json`, `summary_metrics.csv` | image-level metrics |
+| `results/confusion_matrix.csv`, `confusion_multiclass.csv` | confusion matrices |
+| `results/pixel_iou.csv` | auxiliary pixel-level localisation vs. ground truth |
+| `results/per_image/<class>_<id>/` | diff · mask · roi · registered · overlay PNGs |
+| `article_assets/*.png` | all report figures |
+| `report/Bottle_Inspection_Report_DIP2026_Lior.pdf` | the report |
+
+</details>
+
+---
+
+## 🗂️ Repository layout
+
+```
+src/                     pipeline source (well commented)
+├─ config.py               frozen parameters
+├─ io_utils.py             image loading / listing
+├─ preprocessing.py        CLAHE · reference build · bottle mask + ROI · photometric match
+├─ registration.py         ECC (Euclidean) alignment to the reference
+├─ differencing.py         CIELAB ΔE difference map
+├─ segmentation.py         thresholding · morphology · connected components
+├─ features.py             per-component shape / brightness descriptors
+├─ classification.py       detect + rule-based defect typing
+├─ pipeline.py             per-image orchestration
+├─ evaluate.py             metrics · confusion · threshold calibration · pixel IoU
+├─ visualization.py        all report figures
+└─ run_all.py              end-to-end entry point
+
+tools/make_block_diagram.py   pipeline block diagram
+report/                       build_report.py + the PDF
+article_assets/               publication-quality figures
+results/                      predictions, metrics, confusion matrices, per-image outputs
+data/bottle/                  dataset (see below)
+```
+
+---
+
+## 💾 Data
+
+Evaluated on the **`bottle`** category of the public
+**[MVTec Anomaly Detection dataset](https://www.mvtec.com/company/research/datasets/mvtec-ad)**
+(Bergmann et al., CVPR 2019 · licensed CC BY-NC-SA 4.0). A small sample ships with the repo;
+download the full set and arrange it as:
 
 ```
 data/bottle/
-  train/good/          good images used to build the reference
-  test/good|broken_large|broken_small|contamination/
-  ground_truth/        defect masks (used only for the auxiliary pixel metric)
+├─ train/good/                                         reference-building images
+├─ test/{good,broken_large,broken_small,contamination}/
+└─ ground_truth/                                       masks (auxiliary pixel metric only)
 ```
 
-The pipeline is dataset-agnostic: point `--data` at any folder with the same structure
-(e.g. self-captured images) to run on different data.
+The pipeline is **dataset-agnostic** — point `--data` at any folder with this structure
+(e.g. self-captured photos) to run on your own images.
 
-## Notes
-- All processing is at 512×512. Parameters are frozen in `src/config.py`.
-- The course brief encourages original images; the public MVTec set was used for
-  reproducibility and access to ground-truth masks (see the report's "Note on data").
+---
+
+<div align="center">
+<sub>All processing at 512×512 · parameters frozen in <code>src/config.py</code> · classical methods only.<br>
+The course brief encourages original images; the public MVTec set was used for reproducibility and
+ground-truth masks — see the report's <i>Note on data</i>.</sub>
+</div>
