@@ -1,0 +1,2 @@
+TP,FP,TN,FN,precision,recall,specificity,f1,accuracy,area_threshold_pct,mean_pixel_iou,mean_pixel_recall
+47,0,20,16,1.0,0.746031746031746,1.0,0.8545454545454546,0.8072289156626506,0.1984,0.0915,0.0935

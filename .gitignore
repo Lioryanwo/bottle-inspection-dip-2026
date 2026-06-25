@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.DS_Store
+.ipynb_checkpoints/
+# bulk dataset (download from MVTec; keep only samples in git)
+data/bottle/train/good/*
+data/bottle/test/*/*
+!data/bottle/**/.gitkeep
+# regenerated per-image diagnostics
+results/per_image/

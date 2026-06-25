@@ -1,0 +1,5 @@
+,pred_good,pred_broken_large,pred_broken_small,pred_contamination
+gt_good,20,0,0,0
+gt_broken_large,0,7,9,4
+gt_broken_small,3,5,14,0
+gt_contamination,13,4,1,3

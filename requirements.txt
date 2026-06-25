@@ -1,0 +1,7 @@
+opencv-python
+numpy
+pandas
+matplotlib
+scikit-image
+Pillow
+weasyprint  # only needed to rebuild the PDF report
