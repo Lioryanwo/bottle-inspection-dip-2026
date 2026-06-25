@@ -28,7 +28,7 @@ Every stage is classical and interpretable: geometric **registration**, **refere
 in physical colour units, **morphology**, **connected-component** analysis, and an explicit
 **rule-based** decision. There is **no learned model and no synthetic data** anywhere in the system.
 
-> 📄 **Full write-up (IMRaD report):** [`report/Bottle_Inspection_Report_DIP2026_Lior.pdf`](report/Bottle_Inspection_Report_DIP2026_Lior.pdf)
+> 📄 **Full write-up (IMRaD report):** [`report/Bottle_Inspection_Report_DIP2026_Lior.pdf`](report/Bottle_Inspection_Report_DIP2026_Lior & Nadav.pdf)
 
 ---
 
