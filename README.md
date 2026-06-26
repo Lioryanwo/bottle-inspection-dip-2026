@@ -34,7 +34,7 @@ in physical colour units, **morphology**, **connected-component** analysis, and 
 
 ## 📊 Results at a glance
 
-<p align="center"><i>Evaluated on the public <b>MVTec AD — bottle</b> set (83 test images).</i></p>
+<p align="center"><i>Evaluation performed on an 83-image bottle inspection test set.</i></p>
 
 | Metric | Score | Note |
 |:--|:--:|:--|
